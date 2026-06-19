@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Diagnóstico — Avaliação de Modelos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --ink: #0E1116;
+    --panel: #161B22;
+    --panel-raised: #1C222B;
+    --hairline: #2A323D;
+    --paper: #E8E6DE;
+    --muted: #8A93A3;
+    --amber: #D98E3B;
+    --amber-dim: #4A371F;
+    --teal: #4FA88F;
+    --teal-dim: #1E3A33;
+    --danger: #C75C5C;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  body{
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono{ font-family: 'IBM Plex Mono', monospace; }
+
+  ::selection{ background: var(--amber); color: var(--ink); }
+
+  #app{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 24px 80px;
+  }
+
+  /* ---------- Report header ---------- */
+  .report-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap: 24px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .status-dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--muted);
+    display:inline-block;
+    transition: background .3s;
+  }
+  .status-dot.online{ background: var(--teal); box-shadow:0 0 0 3px var(--teal-dim); }
+  .status-dot.offline{ background: var(--danger); box-shadow:0 0 0 3px #3a1f1f; }
+
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 34px;
+    letter-spacing: -0.01em;
+    max-width: 560px;
+  }
+  .subtitle{
+    color: var(--muted);
+    max-width: 480px;
+    margin-top: 8px;
+    font-size: 13.5px;
+  }
+
+  .best-badge{
+    text-align:right;
+    flex-shrink:0;
+  }
+  .best-badge .label{
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .best-badge .model-name{
+    font-family:'Fraunces', serif;
+    font-size: 20px;
+    color: var(--amber);
+  }
+  .best-badge .reasoning{
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 4px;
+    max-width: 220px;
+  }
+
+  /* ---------- Model tabs ---------- */
+  .model-tabs{
+    display:flex;
+    gap: 2px;
+    margin-bottom: 24px;
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    overflow:hidden;
+    width: fit-content;
+  }
+  .model-tab{
+    background: var(--panel);
+    border:none;
+    color: var(--muted);
+    font-family:'Inter';
+    font-size: 13px;
+    padding: 11px 18px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    align-items:flex-start;
+    border-right: 1px solid var(--hairline);
+    transition: background .15s, color .15s;
+  }
+  .model-tab:last-child{ border-right:none; }
+  .model-tab .tab-metric{
+    font-family:'IBM Plex Mono';
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .model-tab:hover{ background: var(--panel-raised); color: var(--paper); }
+  .model-tab.active{ background: var(--panel-raised); color: var(--paper); }
+  .model-tab.active .tab-metric{ color: var(--amber); }
+  .model-tab.active{ box-shadow: inset 0 -2px 0 var(--amber); }
+
+  /* ---------- Panel grid (confusion matrix + metrics readout) ---------- */
+  .panel-grid{
+    display:grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 760px){ .panel-grid{ grid-template-columns: 1fr; } }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 22px;
+  }
+  .panel-title{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+
+  /* confusion matrix */
+  .cm-wrap{ display:flex; gap:14px; }
+  .cm-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 72px);
+    grid-template-rows: repeat(2, 72px);
+    gap: 4px;
+  }
+  .cm-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius: 6px;
+    font-family:'IBM Plex Mono';
+  }
+  .cm-cell .v{ font-size: 20px; font-weight:600; }
+  .cm-cell .l{ font-size: 9px; color: var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.05em; }
+  .cm-legend{ display:flex; flex-direction:column; justify-content:center; gap:10px; font-size:11.5px; color:var(--muted); }
+  .cm-legend div span{ color: var(--paper); }
+
+  /* metrics readout */
+  .readout-list{ display:flex; flex-direction:column; gap: 14px; }
+  .readout-row{ display:grid; grid-template-columns: 90px 1fr 56px; align-items:center; gap:12px; }
+  .readout-label{ font-size: 12px; color: var(--muted); }
+  .readout-bar-track{ height: 5px; background: var(--hairline); border-radius: 3px; overflow:hidden; }
+  .readout-bar-fill{ height:100%; border-radius:3px; background: var(--teal); transition: width .5s ease; }
+  .readout-value{ font-family:'IBM Plex Mono'; font-size: 14px; text-align:right; font-weight:600; }
+
+  /* recall comparison */
+  .recall-compare{ margin-top: 6px; display:flex; flex-direction:column; gap:10px; }
+  .rc-row{ display:grid; grid-template-columns: 130px 1fr 50px; align-items:center; gap:10px; }
+  .rc-label{ font-size: 12px; color: var(--muted); }
+  .rc-track{ height:14px; background: var(--hairline); border-radius:3px; overflow:hidden; position:relative; }
+  .rc-fill{ height:100%; background: var(--teal); border-radius:3px; transition: width .5s ease; }
+  .rc-fill.is-best{ background: var(--amber); }
+  .rc-value{ font-family:'IBM Plex Mono'; font-size:12px; text-align:right; }
+
+  /* ---------- Patient explorer ---------- */
+  .explorer-header{
+    display:flex; justify-content:space-between; align-items:center;
+    margin: 36px 0 14px; flex-wrap:wrap; gap: 12px;
+  }
+  .explorer-title{ font-family:'Fraunces', serif; font-size: 19px; }
+  .explorer-controls{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .filter-pill{
+    background: var(--panel); border:1px solid var(--hairline); color: var(--muted);
+    font-size: 12px; padding: 6px 12px; border-radius: 20px; cursor:pointer;
+    font-family:'Inter'; transition: all .15s;
+  }
+  .filter-pill:hover{ color: var(--paper); }
+  .filter-pill.active{ background: var(--panel-raised); color: var(--paper); border-color: var(--amber); }
+  .search-input{
+    background: var(--panel); border:1px solid var(--hairline); color: var(--paper);
+    font-size: 12.5px; padding: 7px 12px; border-radius: 20px; font-family:'IBM Plex Mono';
+    width: 110px; outline:none;
+  }
+  .search-input:focus{ border-color: var(--amber); }
+  .search-input::placeholder{ color: var(--muted); }
+
+  .table-wrap{
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table{ width:100%; border-collapse: collapse; }
+  thead th{
+    text-align:left;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    background: var(--panel-raised);
+    padding: 10px 14px;
+    font-weight: 500;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+  thead th:hover{ color: var(--paper); }
+  thead th.sorted::after{ content:' ↓'; color: var(--amber); }
+  thead th.sorted.asc::after{ content:' ↑'; }
+  tbody tr{
+    border-top: 1px solid var(--hairline);
+    background: var(--panel);
+    cursor:pointer;
+    transition: background .12s;
+  }
+  tbody tr:hover{ background: var(--panel-raised); }
+  tbody tr.expanded{ background: var(--panel-raised); }
+  td{ padding: 10px 14px; font-size: 12.5px; vertical-align: middle; }
+  td.mono-cell{ font-family:'IBM Plex Mono'; color: var(--muted); }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:'IBM Plex Mono'; font-size:11px;
+    padding: 3px 9px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing:.03em;
+  }
+  .badge.benigno{ background: var(--teal-dim); color: var(--teal); }
+  .badge.maligno{ background: var(--amber-dim); color: var(--amber); }
+
+  .pred-cell{ display:flex; align-items:center; gap:10px; }
+  .prob-bar-track{ width: 56px; height:5px; background: var(--hairline); border-radius:3px; overflow:hidden; }
+  .prob-bar-fill{ height:100%; }
+  .prob-bar-fill.benigno{ background: var(--teal); }
+  .prob-bar-fill.maligno{ background: var(--amber); }
+
+  .miss-icon{ color: var(--danger); font-weight:700; }
+  .hit-icon{ color: var(--muted); }
+
+  /* expanded detail row */
+  .detail-row td{ padding: 0; }
+  .detail-drawer{
+    padding: 16px 22px 20px;
+    background: var(--ink);
+    border-top: 1px dashed var(--hairline);
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 700px){ .detail-drawer{ grid-template-columns: repeat(2,1fr); } }
+  .detail-chip{
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .detail-chip .chip-model{ font-size: 11px; color: var(--muted); margin-bottom:6px; }
+  .detail-chip .chip-pred{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .detail-chip .chip-prob{ font-family:'IBM Plex Mono'; font-size: 11px; color: var(--muted); }
+
+  .table-footer{
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 10px 14px; font-size: 11.5px; color: var(--muted);
+    background: var(--panel-raised); border-top: 1px solid var(--hairline);
+  }
+
+  .offline-banner{
+    background: var(--panel); border:1px solid var(--danger);
+    border-radius: 10px; padding: 18px 22px; margin-bottom: 24px;
+    font-size: 13px; color: var(--paper); display:none;
+  }
+  .offline-banner code{
+    background: var(--ink); padding: 2px 6px; border-radius:4px; font-family:'IBM Plex Mono'; font-size:12px;
+  }
+  .offline-banner.show{ display:block; }
+
+  .skeleton{ color: var(--muted); font-size: 13px; padding: 40px; text-align:center; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="report-header">
+    <div>
+      <div class="eyebrow"><span class="status-dot" id="statusDot"></span> <span id="statusText">conectando à api…</span></div>
+      <h1>Quatro modelos, um diagnóstico.</h1>
+      <p class="subtitle">Comparação de Regressão Logística, LDA, QDA e Naive Bayes sobre o conjunto de teste do Wisconsin Diagnostic Breast Cancer Dataset.</p>
+    </div>
+    <div class="best-badge" id="bestBadge"></div>
+  </div>
+
+  <div class="offline-banner" id="offlineBanner">
+    Não consegui conectar na API em <code id="offlineUrl"></code>.<br>
+    Verifique se ela está rodando: <code>uvicorn app.main:app --reload --port 8000</code>
+  </div>
+
+  <div id="mainContent" style="display:none;">
+
+    <div class="model-tabs" id="modelTabs"></div>
+
+    <div class="panel-grid">
+      <div class="panel">
+        <div class="panel-title">Matriz de confusão</div>
+        <div class="cm-wrap">
+          <div class="cm-grid" id="cmGrid"></div>
+          <div class="cm-legend">
+            <div>Real <span>Benigno</span></div>
+            <div>Real <span>Maligno</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Leitura de desempenho</div>
+        <div class="readout-list" id="readoutList"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Recall por modelo — métrica norteadora (custo de um falso negativo é alto)</div>
+      <div class="recall-compare" id="recallCompare"></div>
+    </div>
+
+    <div class="explorer-header">
+      <div class="explorer-title">Explorador de casos — conjunto de teste</div>
+      <div class="explorer-controls">
+        <input class="search-input" id="searchInput" type="text" placeholder="buscar id…">
+        <button class="filter-pill active" data-filter="todos">Todos</button>
+        <button class="filter-pill" data-filter="benigno">Benignos</button>
+        <button class="filter-pill" data-filter="maligno">Malignos</button>
+        <button class="filter-pill" data-filter="erros">Apenas erros</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="id">ID</th>
+            <th data-sort="features.radius_mean">Raio</th>
+            <th data-sort="features.texture_mean">Textura</th>
+            <th data-sort="features.area_mean">Área</th>
+            <th data-sort="features.concavity_mean">Concavidade</th>
+            <th>Real</th>
+            <th>Previsão</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="tableCount"></span>
+        <span>clique numa linha para ver os 4 modelos lado a lado</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="skeleton" id="loadingState">carregando dados do modelo…</div>
+
+</div>
+
+<script>
+// ============================================================
+// Configuração — troque pela URL da sua API quando publicar
+// ============================================================
+const API_BASE_URL = 'http://127.0.0.1:8000';
+
+// ============================================================
+// Estado
+// ============================================================
+let METRICS = null;
+let PATIENTS = [];
+let activeModel = 'lr';
+let activeFilter = 'todos';
+let searchTerm = '';
+let sortKey = 'id';
+let sortAsc = true;
+let expandedId = null;
+
+const MODEL_ORDER = ['lr', 'lda', 'qda', 'nb'];
+
+// ============================================================
+// Fetch helpers
+// ============================================================
+async function fetchJSON(path){
+  const res = await fetch(`${API_BASE_URL}${path}`);
+  if(!res.ok) throw new Error(`${path} -> ${res.status}`);
+  return res.json();
+}
+
+function getPath(obj, path){
+  return path.split('.').reduce((o,k)=>o?.[k], obj);
+}
+
+// ============================================================
+// Boot
+// ============================================================
+async function boot(){
+  document.getElementById('offlineUrl').textContent = API_BASE_URL;
+  try{
+    const [metrics, patientsResp] = await Promise.all([
+      fetchJSON('/api/metrics'),
+      fetchJSON('/api/patients?page=1&page_size=500'),
+    ]);
+    METRICS = metrics;
+    PATIENTS = patientsResp.results;
+    activeModel = METRICS.best_model;
+
+    document.getElementById('statusDot').className = 'status-dot online';
+    document.getElementById('statusText').textContent = 'api conectada';
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+
+    renderAll();
+  }catch(err){
+    console.error(err);
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'api offline';
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('offlineBanner').classList.add('show');
+  }
+}
+
+// ============================================================
+// Render: cabeçalho / badge do melhor modelo
+// ============================================================
+function renderBestBadge(){
+  const best = METRICS.models[METRICS.best_model];
+  document.getElementById('bestBadge').innerHTML = `
+    <div class="label">Melhor modelo · recall</div>
+    <div class="model-name">${best.label}</div>
+    <div class="reasoning">${(best.recall*100).toFixed(1)}% de recall — menor taxa de falsos negativos entre os 4</div>
+  `;
+}
+
+// ============================================================
+// Render: tabs de modelo
+// ============================================================
+function renderTabs(){
+  const wrap = document.getElementById('modelTabs');
+  wrap.innerHTML = MODEL_ORDER.map(key=>{
+    const m = METRICS.models[key];
+    return `
+      <button class="model-tab ${key===activeModel?'active':''}" data-model="${key}">
+        <span>${m.label}</span>
+        <span class="tab-metric">acc ${(m.accuracy*100).toFixed(1)}%</span>
+      </button>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('.model-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeModel = btn.dataset.model;
+      renderAll();
+    });
+  });
+}
+
+// ============================================================
+// Render: matriz de confusão
+// ============================================================
+function renderConfusionMatrix(){
+  const cm = METRICS.models[activeModel].confusion_matrix;
+  const total = cm.tn + cm.fp + cm.fn + cm.tp;
+  const intensity = (v)=> 0.12 + 0.55 * (v/total);
+
+  const cells = [
+    {v: cm.tn, l:'Verdadeiro\nBenigno', color: 'teal', alpha: intensity(cm.tn)},
+    {v: cm.fp, l:'Falso\nMaligno',      color: 'amber', alpha: intensity(cm.fp)},
+    {v: cm.fn, l:'Falso\nBenigno',      color: 'amber', alpha: intensity(cm.fn)},
+    {v: cm.tp, l:'Verdadeiro\nMaligno', color: 'teal', alpha: intensity(cm.tp)},
+  ];
+
+  document.getElementById('cmGrid').innerHTML = cells.map(c=>{
+    const base = c.color === 'teal' ? '79,168,143' : '217,142,59';
+    return `
+      <div class="cm-cell" style="background: rgba(${base}, ${c.alpha}); border: 1px solid rgba(${base},0.4);">
+        <div class="v">${c.v}</div>
+        <div class="l">${c.l.replace('\n','<br>')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// Render: readout de métricas
+// ============================================================
+function renderReadout(){
+  const m = METRICS.models[activeModel];
+  const rows = [
+    {label:'Acurácia', value: m.accuracy},
+    {label:'Precisão', value: m.precision},
+    {label:'Recall', value: m.recall},
+    {label:'F1-Score', value: m.f1},
+    {label:'AUC-ROC', value: m.roc_auc},
+  ];
+  document.getElementById('readoutList').innerHTML = rows.map(r=>`
+    <div class="readout-row">
+      <div class="readout-label">${r.label}</div>
+      <div class="readout-bar-track"><div class="readout-bar-fill" style="width:${(r.value*100).toFixed(1)}%"></div></div>
+      <div class="readout-value">${(r.value*100).toFixed(1)}%</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// Render: comparação de recall entre modelos
+// ============================================================
+function renderRecallCompare(){
+  const bestKey = Object.keys(METRICS.models).reduce((a,b)=>
+    METRICS.models[a].recall > METRICS.models[b].recall ? a : b
+  );
+  document.getElementById('recallCompare').innerHTML = MODEL_ORDER.map(key=>{
+    const m = METRICS.models[key];
+    const isBest = key === bestKey;
+    return `
+      <div class="rc-row">
+        <div class="rc-label">${m.label}</div>
+        <div class="rc-track"><div class="rc-fill ${isBest?'is-best':''}" style="width:${(m.recall*100).toFixed(1)}%"></div></div>
+        <div class="rc-value">${(m.recall*100).toFixed(1)}%</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// Render: tabela de pacientes
+// ============================================================
+function getFilteredSortedPatients(){
+  let list = [...PATIENTS];
+
+  if(activeFilter === 'benigno') list = list.filter(p=>p.actual==='benigno');
+  if(activeFilter === 'maligno') list = list.filter(p=>p.actual==='maligno');
+  if(activeFilter === 'erros') list = list.filter(p=>!p.predictions[activeModel].correct);
+
+  if(searchTerm){
+    list = list.filter(p=> String(p.id).includes(searchTerm));
+  }
+
+  list.sort((a,b)=>{
+    const va = getPath(a, sortKey), vb = getPath(b, sortKey);
+    if(va < vb) return sortAsc ? -1 : 1;
+    if(va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  return list;
+}
+
+function renderTable(){
+  const list = getFilteredSortedPatients();
+  document.getElementById('tableCount').textContent = `${list.length} de ${PATIENTS.length} casos`;
+
+  const rowsHtml = list.map(p=>{
+    const pred = p.predictions[activeModel];
+    const isExpanded = p.id === expandedId;
+    const mainRow = `
+      <tr data-id="${p.id}" class="${isExpanded?'expanded':''}">
+        <td class="mono-cell">#${p.id}</td>
+        <td class="mono-cell">${p.features.radius_mean}</td>
+        <td class="mono-cell">${p.features.texture_mean}</td>
+        <td class="mono-cell">${p.features.area_mean}</td>
+        <td class="mono-cell">${p.features.concavity_mean}</td>
+        <td><span class="badge ${p.actual}">${p.actual}</span></td>
+        <td>
+          <div class="pred-cell">
+            <span class="badge ${pred.label}">${pred.label}</span>
+            <div class="prob-bar-track"><div class="prob-bar-fill ${pred.label}" style="width:${(pred.probability*100).toFixed(0)}%"></div></div>
+          </div>
+        </td>
+        <td>${pred.correct ? '<span class="hit-icon">·</span>' : '<span class="miss-icon">✕ erro</span>'}</td>
+      </tr>
+    `;
+
+    if(!isExpanded) return mainRow;
+
+    const detailChips = MODEL_ORDER.map(key=>{
+      const pr = p.predictions[key];
+      const label = METRICS.models[key].label;
+      return `
+        <div class="detail-chip">
+          <div class="chip-model">${label}</div>
+          <div class="chip-pred">
+            <span class="badge ${pr.label}">${pr.label}</span>
+            ${pr.correct ? '' : '<span class="miss-icon">✕</span>'}
+          </div>
+          <div class="prob-bar-track"><div class="prob-bar-fill ${pr.label}" style="width:${(pr.probability*100).toFixed(0)}%"></div></div>
+          <div class="chip-prob" style="margin-top:6px;">${(pr.probability*100).toFixed(1)}% confiança</div>
+        </div>
+      `;
+    }).join('');
+
+    return mainRow + `
+      <tr class="detail-row"><td colspan="8">
+        <div class="detail-drawer">${detailChips}</div>
+      </td></tr>
+    `;
+  }).join('');
+
+  document.getElementById('tableBody').innerHTML = rowsHtml;
+
+  document.querySelectorAll('#tableBody tr[data-id]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const id = Number(row.dataset.id);
+      expandedId = expandedId === id ? null : id;
+      renderTable();
+    });
+  });
+}
+
+// ============================================================
+// Render geral
+// ============================================================
+function renderAll(){
+  renderBestBadge();
+  renderTabs();
+  renderConfusionMatrix();
+  renderReadout();
+  renderRecallCompare();
+  renderTable();
+}
+
+// ============================================================
+// Listeners estáticos
+// ============================================================
+document.querySelectorAll('.filter-pill').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderTable();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  searchTerm = e.target.value.trim();
+  renderTable();
+});
+
+document.addEventListener('click', (e)=>{
+  const th = e.target.closest('th[data-sort]');
+  if(!th) return;
+  const key = th.dataset.sort;
+  if(sortKey === key){ sortAsc = !sortAsc; } else { sortKey = key; sortAsc = true; }
+  document.querySelectorAll('th[data-sort]').forEach(el=>el.classList.remove('sorted','asc'));
+  th.classList.add('sorted');
+  if(sortAsc) th.classList.add('asc');
+  renderTable();
+});
+
+boot();
+</script>
+</body>
+</html>

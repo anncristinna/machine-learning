@@ -1,0 +1,67 @@
+{
+  "models": {
+    "lr": {
+      "label": "Regressão Logística",
+      "accuracy": 0.9825,
+      "precision": 1.0,
+      "recall": 0.9524,
+      "f1": 0.9756,
+      "roc_auc": 0.9967,
+      "confusion_matrix": {
+        "tn": 72,
+        "fp": 0,
+        "fn": 2,
+        "tp": 40
+      }
+    },
+    "lda": {
+      "label": "Análise Discriminante Linear (LDA)",
+      "accuracy": 0.9649,
+      "precision": 1.0,
+      "recall": 0.9048,
+      "f1": 0.95,
+      "roc_auc": 0.997,
+      "confusion_matrix": {
+        "tn": 72,
+        "fp": 0,
+        "fn": 4,
+        "tp": 38
+      }
+    },
+    "qda": {
+      "label": "Análise Discriminante Quadrática (QDA)",
+      "accuracy": 0.9474,
+      "precision": 0.9286,
+      "recall": 0.9286,
+      "f1": 0.9286,
+      "roc_auc": 0.9888,
+      "confusion_matrix": {
+        "tn": 69,
+        "fp": 3,
+        "fn": 3,
+        "tp": 39
+      }
+    },
+    "nb": {
+      "label": "Naive Bayes Gaussiano",
+      "accuracy": 0.9211,
+      "precision": 0.9231,
+      "recall": 0.8571,
+      "f1": 0.8889,
+      "roc_auc": 0.9891,
+      "confusion_matrix": {
+        "tn": 69,
+        "fp": 3,
+        "fn": 6,
+        "tp": 36
+      }
+    }
+  },
+  "best_model": "lr",
+  "test_size": 114,
+  "train_size": 455,
+  "class_balance_test": {
+    "benigno": 72,
+    "maligno": 42
+  }
+}
