@@ -18,6 +18,9 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+# IMPORTANTE: Adicione esta importação
+from fastapi.staticfiles import StaticFiles
+
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 app = FastAPI(
@@ -139,7 +142,15 @@ def predict_custom(payload: CustomFeatures):
         "probability": round(proba, 4),
     }
 
+# ---------------------------------------------------------------------------
+# Frontend (Arquivos Estáticos) - Substitui a antiga rota "/"
+# ---------------------------------------------------------------------------
+import os
 
-@app.get("/")
-def root():
-    return {"status": "ok", "docs": "/docs"}
+# Pega o caminho absoluto da pasta raiz do projeto (ajuste se necessário)
+# Considerando que app/main.py está dentro de app/, voltamos um diretório
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Monta a pasta frontend na raiz. 
+# Se a pasta estiver no mesmo nível de "app" e "data", será encontrada aqui.
+app.mount("/", StaticFiles(directory=BASE_DIR / "frontend", html=True), name="frontend")
