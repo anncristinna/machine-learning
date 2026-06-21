@@ -12,7 +12,7 @@
   <div class="report-header">
     <div>
       <div class="eyebrow"><span class="status-dot" id="statusDot"></span> <span id="statusText">conectando à api…</span></div>
-      <h1>Quatro modelos, um diagnóstico.</h1>
+      <h1>Data Breast Cancer</h1>
       <p class="subtitle">Comparação de Regressão Logística, LDA, QDA e Naive Bayes sobre o conjunto de teste do Wisconsin Diagnostic Breast Cancer Dataset.</p>
     </div>
     <div class="best-badge" id="bestBadge"></div>
@@ -25,63 +25,88 @@
 
   <div id="mainContent" style="display:none;">
 
-    <div class="model-tabs" id="modelTabs"></div>
+    <div class="page-tabs">
+      <button class="page-tab active" data-page="avaliacao">Avaliação de Modelos</button>
+      <button class="page-tab" data-page="analises">Análises Exploratórias</button>
+    </div>
 
-    <div class="panel-grid">
-      <div class="panel">
-        <div class="panel-title">Matriz de confusão</div>
-        <div class="cm-wrap">
-          <div class="cm-grid" id="cmGrid"></div>
-          <div class="cm-legend">
-            <div>Real <span>Benigno</span></div>
-            <div>Real <span>Maligno</span></div>
-          </div>
+    <section id="page-avaliacao" class="page">
+
+      <div class="model-tabs" id="modelTabs"></div>
+
+      <div class="panel-grid">
+
+        <div class="panel" id="desempenho">
+          <div class="panel-title">Leitura de desempenho</div>
+          <div class="readout-list" id="readoutList"></div>
         </div>
       </div>
 
       <div class="panel">
-        <div class="panel-title">Leitura de desempenho</div>
-        <div class="readout-list" id="readoutList"></div>
+        <div class="panel-title">Recall por modelo — métrica norteadora (custo de um falso negativo é alto)</div>
+        <div class="recall-compare" id="recallCompare"></div>
       </div>
-    </div>
 
-    <div class="panel">
-      <div class="panel-title">Recall por modelo — métrica norteadora (custo de um falso negativo é alto)</div>
-      <div class="recall-compare" id="recallCompare"></div>
-    </div>
-
-    <div class="explorer-header">
-      <div class="explorer-title">Explorador de casos — conjunto de teste</div>
-      <div class="explorer-controls">
-        <input class="search-input" id="searchInput" type="text" placeholder="buscar id…">
-        <button class="filter-pill active" data-filter="todos">Todos</button>
-        <button class="filter-pill" data-filter="benigno">Benignos</button>
-        <button class="filter-pill" data-filter="maligno">Malignos</button>
-        <button class="filter-pill" data-filter="erros">Apenas erros</button>
+      <div class="explorer-header">
+        <div class="explorer-title">Explorador de casos — conjunto de teste</div>
+        <div class="explorer-controls">
+          <input class="search-input" id="searchInput" type="text" placeholder="buscar id…">
+          <button class="filter-pill active" data-filter="todos">Todos</button>
+          <button class="filter-pill" data-filter="benigno">Benignos</button>
+          <button class="filter-pill" data-filter="maligno">Malignos</button>
+          <button class="filter-pill" data-filter="erros">Apenas erros</button>
+        </div>
       </div>
-    </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th data-sort="id">ID</th>
-            <th data-sort="features.radius_mean">Raio</th>
-            <th data-sort="features.texture_mean">Textura</th>
-            <th data-sort="features.area_mean">Área</th>
-            <th data-sort="features.concavity_mean">Concavidade</th>
-            <th>Real</th>
-            <th>Previsão</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-      <div class="table-footer">
-        <span id="tableCount"></span>
-        <span>clique numa linha para ver os 4 modelos lado a lado</span>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="id">ID</th>
+              <th data-sort="features.radius_mean">Raio</th>
+              <th data-sort="features.texture_mean">Textura</th>
+              <th data-sort="features.area_mean">Área</th>
+              <th data-sort="features.concavity_mean">Concavidade</th>
+              <th>Real</th>
+              <th>Previsão</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="table-footer">
+          <span id="tableCount"></span>
+          <span>clique numa linha para ver os 4 modelos lado a lado</span>
+        </div>
       </div>
-    </div>
+
+    </section>
+
+    <section id="page-analises" class="page" style="display:none;">
+
+      <div class="panel">
+        <div class="panel-title">Matriz de correlação — características médias (conjunto de treino)</div>
+        <div id="corrHeatmap"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-title">Distribuição por diagnóstico — densidade de cada característica</div>
+        <div class="dist-legend">
+          <span><i class="dot benigno"></i> Benigno</span>
+          <span><i class="dot maligno"></i> Maligno</span>
+        </div>
+        <div class="dist-grid" id="distGrid"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-title">Matriz de confusão</div>
+        <div class="nb-cm-wrap">
+          <div class="model-tabs" id="modelTabsAnalises"></div>
+          <div class="nb-cm-grid" id="nbCmGrid"></div>
+        </div>
+      </div>
+
+    </section>
 
   </div>
 

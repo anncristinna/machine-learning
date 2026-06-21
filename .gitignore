@@ -1,0 +1,31 @@
+# Ambiente virtual
+venv/
+env/
+.venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Artefatos gerados pelo train_and_export.py
+# (modelos, scaler e dados derivados — são recriados a qualquer momento)
+data/*.pkl
+data/*.json
+!data/.gitkeep
+
+# Dataset bruto (geralmente não se versiona dataset no git)
+data.csv
+
+# Variáveis de ambiente / segredos
+.env
+
+# VSCode
+.vscode/
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

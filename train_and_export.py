@@ -18,6 +18,7 @@ import os
 import sys
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.discriminant_analysis import (
     LinearDiscriminantAnalysis,
@@ -206,6 +207,36 @@ with open(f"{OUT_DIR}/patients.json", "w", encoding="utf-8") as f:
 
 with open(f"{OUT_DIR}/feature_columns.json", "w", encoding="utf-8") as f:
     json.dump(list(X.columns), f, ensure_ascii=False, indent=2)
+
+mean_features = [c for c in X.columns if c.endswith("_mean")]
+
+corr_matrix = X_train[mean_features].corr().round(4)
+correlation_payload = {
+    "features": mean_features,
+    "matrix": corr_matrix.values.tolist(),
+}
+with open(f"{OUT_DIR}/correlation.json", "w", encoding="utf-8") as f:
+    json.dump(correlation_payload, f, ensure_ascii=False, indent=2)
+
+from scipy.stats import gaussian_kde
+
+distributions_payload = {"features": mean_features, "benigno": {}, "maligno": {}}
+for feature in mean_features:
+    values = X_train[feature].values
+    span = values.max() - values.min()
+    grid = np.linspace(values.min() - 0.1 * span, values.max() + 0.1 * span, 80)
+
+    for label, code in (("benigno", 0), ("maligno", 1)):
+        subset = values[(y_train == code).values]
+        kde = gaussian_kde(subset)
+        density = kde(grid)
+        distributions_payload[label][feature] = {
+            "x": [round(float(v), 4) for v in grid],
+            "y": [round(float(v), 6) for v in density],
+        }
+
+with open(f"{OUT_DIR}/distributions.json", "w", encoding="utf-8") as f:
+    json.dump(distributions_payload, f, ensure_ascii=False, indent=2)
 
 print("\nExportação concluída!")
 print(f"- {len(patients)} pacientes de teste exportados")

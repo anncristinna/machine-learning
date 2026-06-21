@@ -7,6 +7,8 @@ Endpoints:
   GET  /api/patients           -> lista paginada dos pacientes do conjunto de teste
   GET  /api/patients/{id}      -> detalhe de um paciente (todas as features + previsões)
   POST /api/predict            -> roda os modelos em cima de um conjunto de features customizado
+  GET  /api/analysis/correlation   -> matriz de correlação das features _mean (treino)
+  GET  /api/analysis/distributions -> curvas KDE por feature/classe (treino)
 """
 import json
 from pathlib import Path
@@ -17,9 +19,6 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-
-# IMPORTANTE: Adicione esta importação
-from fastapi.staticfiles import StaticFiles
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -50,6 +49,12 @@ try:
 
     with open(DATA_DIR / "feature_columns.json", encoding="utf-8") as f:
         FEATURE_COLUMNS = json.load(f)
+
+    with open(DATA_DIR / "correlation.json", encoding="utf-8") as f:
+        CORRELATION = json.load(f)
+
+    with open(DATA_DIR / "distributions.json", encoding="utf-8") as f:
+        DISTRIBUTIONS = json.load(f)
 
     SCALER = joblib.load(DATA_DIR / "scaler.pkl")
     MODELS = {
@@ -142,15 +147,18 @@ def predict_custom(payload: CustomFeatures):
         "probability": round(proba, 4),
     }
 
-# ---------------------------------------------------------------------------
-# Frontend (Arquivos Estáticos) - Substitui a antiga rota "/"
-# ---------------------------------------------------------------------------
-import os
 
-# Pega o caminho absoluto da pasta raiz do projeto (ajuste se necessário)
-# Considerando que app/main.py está dentro de app/, voltamos um diretório
-BASE_DIR = Path(__file__).resolve().parent.parent
+@app.get("/api/analysis/correlation")
+def get_correlation():
+    return CORRELATION
 
-# Monta a pasta frontend na raiz. 
-# Se a pasta estiver no mesmo nível de "app" e "data", será encontrada aqui.
-app.mount("/", StaticFiles(directory=BASE_DIR / "frontend", html=True), name="frontend")
+
+@app.get("/api/analysis/distributions")
+def get_distributions():
+    return DISTRIBUTIONS
+
+
+from fastapi.staticfiles import StaticFiles
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
