@@ -63,5 +63,9 @@
   "class_balance_test": {
     "benigno": 72,
     "maligno": 42
+  },
+  "class_balance_train": {
+    "benigno": 285,
+    "maligno": 170
   }
 }

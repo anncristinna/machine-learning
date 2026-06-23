@@ -13,7 +13,7 @@
     <div>
       <div class="eyebrow"><span class="status-dot" id="statusDot"></span> <span id="statusText">conectando à api…</span></div>
       <h1>Data Breast Cancer</h1>
-      <p class="subtitle">Comparação de Regressão Logística, LDA, QDA e Naive Bayes sobre o conjunto de teste do Wisconsin Diagnostic Breast Cancer Dataset.</p>
+      <p class="subtitle">Comparação de Regressão Logística, LDA, QDA e Naive Bayes sobre o Wisconsin Diagnostic Breast Cancer Dataset.</p>
     </div>
     <div class="best-badge" id="bestBadge"></div>
   </div>
@@ -26,25 +26,90 @@
   <div id="mainContent" style="display:none;">
 
     <div class="page-tabs">
-      <button class="page-tab active" data-page="avaliacao">Avaliação de Modelos</button>
-      <button class="page-tab" data-page="analises">Análises Exploratórias</button>
+      <button class="page-tab active" data-page="exploratoria">Análise Exploratória e Pré-processamento</button>
+      <button class="page-tab" data-page="resultados">Resultados</button>
+      <button class="page-tab" data-page="etica">Discussão Ética</button>
     </div>
 
-    <section id="page-avaliacao" class="page">
+    <section id="page-exploratoria" class="page">
+      <div class="panel">
+        <div class="panel-title">Distribuição das classes — conjunto de treino</div>
+        <div id="classDistChart"></div>
+      </div>
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-title">Box plots — todas as 30 características</div>
+        <div class="boxplot-grid" id="boxPlotGrid"></div>
+      </div>
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-title">Matriz de correlação — características médias (conjunto de treino)</div>
+        <div id="corrHeatmap"></div>
+      </div>
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-title">Distribuição por diagnóstico — densidade de cada característica</div>
+        <div class="dist-legend">
+          <span><i class="dot benigno"></i> Benigno</span>
+          <span><i class="dot maligno"></i> Maligno</span>
+        </div>
+        <div class="dist-grid" id="distGrid"></div>
+      </div>
+    </section>
+
+    <section id="page-resultados" class="page" style="display:none;">
 
       <div class="model-tabs" id="modelTabs"></div>
 
       <div class="panel-grid">
-
         <div class="panel" id="desempenho">
           <div class="panel-title">Leitura de desempenho</div>
           <div class="readout-list" id="readoutList"></div>
         </div>
+        <div class="panel">
+          <div class="panel-title">Recall por modelo — métrica norteadora</div>
+          <div class="recall-compare" id="recallCompare"></div>
+        </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-title">Recall por modelo — métrica norteadora (custo de um falso negativo é alto)</div>
-        <div class="recall-compare" id="recallCompare"></div>
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-title">Matriz de confusão</div>
+        <div class="nb-cm-wrap">
+          <div class="nb-cm-grid" id="nbCmGrid"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-title">Justificativa dos hiperparâmetros</div>
+        <div id="explHyperparams"></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-title">Validação cruzada e GridSearchCV</div>
+        <div id="explCrossval"></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-title">Resultados após ajuste de hiperparâmetros — GridSearchCV · scoring=recall</div>
+        <div id="tunedParams" style="margin-bottom:20px;"></div>
+        <div class="tuned-grid">
+          <div>
+            <div class="inner-label">Comparação — antes vs. depois</div>
+            <div id="tunedMetricsCompare"></div>
+          </div>
+          <div>
+            <div class="inner-label">Matriz de confusão (tuned)</div>
+            <div class="nb-cm-grid" id="tunedCmGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-title">Fronteira de decisão — Regressão Logística (projeção PCA 2D)</div>
+        <div class="pca-wrap">
+          <canvas id="pcaCanvas" width="500" height="380"></canvas>
+          <div class="pca-legend">
+            <span><i class="dot teal"></i> Benigno</span>
+            <span><i class="dot amber"></i> Maligno</span>
+          </div>
+        </div>
       </div>
 
       <div class="explorer-header">
@@ -82,30 +147,8 @@
 
     </section>
 
-    <section id="page-analises" class="page" style="display:none;">
-
-      <div class="panel">
-        <div class="panel-title">Matriz de correlação — características médias (conjunto de treino)</div>
-        <div id="corrHeatmap"></div>
-      </div>
-
-      <div class="panel" style="margin-top:20px;">
-        <div class="panel-title">Distribuição por diagnóstico — densidade de cada característica</div>
-        <div class="dist-legend">
-          <span><i class="dot benigno"></i> Benigno</span>
-          <span><i class="dot maligno"></i> Maligno</span>
-        </div>
-        <div class="dist-grid" id="distGrid"></div>
-      </div>
-
-      <div class="panel" style="margin-top:20px;">
-        <div class="panel-title">Matriz de confusão</div>
-        <div class="nb-cm-wrap">
-          <div class="model-tabs" id="modelTabsAnalises"></div>
-          <div class="nb-cm-grid" id="nbCmGrid"></div>
-        </div>
-      </div>
-
+    <section id="page-etica" class="page" style="display:none;">
+      <div id="ethicsContent"></div>
     </section>
 
   </div>
@@ -113,7 +156,6 @@
   <div class="skeleton" id="loadingState">carregando dados do modelo…</div>
 
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>
