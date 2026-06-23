@@ -14,9 +14,6 @@ data/*.pkl
 data/*.json
 !data/.gitkeep
 
-# Dataset bruto (geralmente não se versiona dataset no git)
-data.csv
-
 # Variáveis de ambiente / segredos
 .env
 
